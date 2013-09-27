@@ -8,6 +8,7 @@ DLT_DECLARE_CONTEXT(context);
 int main(int argc, char** argv) {
 	if (argc < 4) {
 		printf("Usage: tracegen APPID CONTEXTID path_to_trace_file [delay]\n");
+		return 1;
 	}
 	else {
 		char* appid = argv[1];
@@ -30,7 +31,7 @@ int main(int argc, char** argv) {
 		fp = fopen(path, "r");
 		if (fp == NULL) {
 			printf("The specified file cannot be found or cannot be opened!\n");
-			exit(EXIT_FAILURE);
+			return 1;
 		}
 
 		while ((read = getline(&line, &len, fp)) != -1) {
@@ -44,9 +45,6 @@ int main(int argc, char** argv) {
 		if (line) {
 			free(line);
 		}
-		free(appid);
-		free(contextid);
-		free(path);
 
 		DLT_UNREGISTER_CONTEXT(context);
 		DLT_UNREGISTER_APP();
