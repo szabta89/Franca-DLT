@@ -1,0 +1,1 @@
+java -Declipse.ignoreApp=true -Dosgi.noShutdown=true -classpath "plugins/org.eclipse.equinox.launcher_1.3.0.v20130327-1440.jar" org.eclipse.equinox.launcher.Main -configuration "file:configuration/" -console -clean
