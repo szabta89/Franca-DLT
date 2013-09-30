@@ -1,4 +1,6 @@
-include( ../../git/dlt-viewer/plugin/plugin.pri )
+# Important: the pro file assumes that both this project's parent (Franca-DLT)
+# and the dlt-viewer project are checked out into the same folder (on the same level)
+include( ../../dlt-viewer/plugin/plugin.pri )
 
 HEADERS += \
     src/traceviewerplugin.h \
@@ -26,8 +28,8 @@ FORMS += \
 QT += network \
       script
 
-INCLUDEPATH += ../../git/dlt-viewer/src \
-            ../../git/dlt-viewer/qdlt
+INCLUDEPATH += ../../dlt-viewer/src \
+            ../../dlt-viewer/qdlt
 
 CONFIG(debug, debug|release) {
     DESTDIR = debug
