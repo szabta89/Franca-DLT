@@ -1,53 +1,71 @@
 #include "tracevalidatorserver.h"
 
-TraceValidatorServer::TraceValidatorServer(TraceViewerPlugin* _plugin, QObject* parent) : QObject(parent)
+TraceValidatorServer::TraceValidatorServer(ContractValidatorPlugin* _plugin, QObject* parent) : QThread(parent)
 {
     this->plugin = _plugin;
-    connect(&server, SIGNAL(newConnection()), this, SLOT(acceptConnection()));
-    server.listen(QHostAddress::LocalHost, SERVER_PORT);
+    this->interrupted = false;
+    this->init();
 }
 
 TraceValidatorServer::~TraceValidatorServer()
 {
-    server.close();
+    close(serverSocket);
 }
 
-void TraceValidatorServer::acceptConnection()
+void TraceValidatorServer::init()
 {
-    client = server.nextPendingConnection();
-    connect(client, SIGNAL(readyRead()), this, SLOT(read()));
-}
-
-void TraceValidatorServer::read()
-{
-    if (client != 0) {
-        if (client->bytesAvailable() > 0) {
-            char buffer[1024] = {0};
-            client->read(buffer, client->bytesAvailable());
-            QMap<QString, QVariant> decoded = json.decode(QString::fromAscii(buffer));
-            this->plugin->contextElementsLock.lock();
-
-            QString contextId = decoded["contextId"].toString();
-            int valid = decoded["valid"].toInt();
-            ContextElement* element = this->plugin->contextElements[contextId];
-
-            // set failure for the first time
-            if (element->valid == 0 && valid == 1) {
-                int messageId = decoded["messageId"].toInt();
-                QString expected = decoded["data"].toString();
-                element->failedAt = messageId;
-                element->failedAtExpectation = expected;
-            }
-            // set valid flag in both cases
-            element->valid = valid;
-
-            qDebug() << decoded << "\n";
-
-            this->plugin->contextElementsLock.unlock();
-        }
-        client->close();
-        //delete client;
+    serverSocket = socket(AF_INET, SOCK_STREAM, 0);
+    if (serverSocket < 0) {
+        qDebug() << "ERROR while creating socket\n";
+        return;
     }
 
-    this->plugin->form->setMessages();
+    bzero((char *) &serverAddress, sizeof(serverAddress));
+    serverAddress.sin_family = AF_INET;
+    serverAddress.sin_addr.s_addr = INADDR_ANY;
+    serverAddress.sin_port = htons(SERVER_PORT);
+
+    if (bind(serverSocket, (struct sockaddr *) &serverAddress, sizeof(serverAddress)) < 0) {
+        serverSocket = -1;
+        qDebug() << "ERROR while invoking bind\n";
+        return;
+    }
+
+    // setting timout for input operations
+    struct timeval timeout;
+    timeout.tv_sec = 1;
+    timeout.tv_usec = 0;
+
+    if (setsockopt (serverSocket, SOL_SOCKET, SO_RCVTIMEO, (char *)&timeout, sizeof(timeout)) < 0) {
+        serverSocket = -1;
+        qDebug() << "ERROR while setting socket timeout\n";
+        return;
+    }
+
+    listen(serverSocket, 10);
+    cli_len = sizeof(clientAddress);
+}
+
+void TraceValidatorServer::interruptThread()
+{
+    this->interrupted = true;
+}
+
+void TraceValidatorServer::run()
+{
+    // only start the loop if the initialization went fine
+    if (serverSocket > 0) {
+        while (!interrupted) {
+            clientSocket = accept(serverSocket, (struct sockaddr *) &clientAddress, &cli_len);
+            if (clientSocket > 0) {
+                char buffer[BUFFER_SIZE];
+                bzero(buffer, BUFFER_SIZE);
+                int n = read(clientSocket, buffer, BUFFER_SIZE-1);
+                if (n > 0) {
+                    this->plugin->traceElementResponseProcessor->add(QString::fromAscii(buffer));
+                }
+                close(clientSocket);
+            }
+        }
+    }
 }

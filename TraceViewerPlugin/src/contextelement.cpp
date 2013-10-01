@@ -4,6 +4,7 @@ ContextElement::ContextElement(QString _contextId)
 {
     this->contextId = _contextId;
     this->valid = -1;
+    this->failedAt = -1;
     this->unsentMessages = new QList<int>();
 }
 

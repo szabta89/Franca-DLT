@@ -1,10 +1,10 @@
 #include "form.h"
 #include "ui_form.h"
-#include "traceviewerplugin.h"
+#include "contractvalidatorplugin.h"
 #include <QDebug>
 #include <QFileDialog>
 
-Form::Form(TraceViewerPlugin* _plugin, QWidget *parent) :
+Form::Form(ContractValidatorPlugin* _plugin, QWidget *parent) :
     QWidget(parent),
     ui(new Ui::Form)
 {
@@ -34,6 +34,38 @@ void Form::addContext(QString contextId)
     QStandardItem* row = new QStandardItem(contextId);
     row->setEditable(false);
     connectionListTableModel.setItem(connectionListTableModel.rowCount(), row);
+    ui->connectionListTable->scrollToBottom();
+}
+
+QBrush Form::getBrush(ContextElement *element)
+{
+    if (element->valid == 0) {
+        return QBrush(QColor(Qt::green));
+    }
+    else if (element->valid == 1) {
+        return QBrush(QColor(Qt::red));
+    }
+    else {
+        return QBrush(QColor(Qt::white));
+    }
+}
+
+QBrush Form::getBrush(ContextElement *element, int messageId)
+{
+    if (element->valid == 0) {
+        return QBrush(QColor(Qt::green));
+    }
+    else if (element->valid == 1) {
+        if (messageId < element->failedAt) {
+            return QBrush(QColor(Qt::green));
+        }
+        else {
+            return QBrush(QColor(Qt::red));
+        }
+    }
+    else {
+        return QBrush(QColor(Qt::white));
+    }
 }
 
 void Form::setMessages() {
@@ -45,30 +77,25 @@ void Form::setMessages() {
 
     if (!currentContext.isNull()) {
         this->plugin->contextElementsLock.lock();
-        ContextElement* element = plugin->contextElements.value(currentContext);
 
-        //selectedConnectionTraceTableModel.clear();
+        // set color of context id label according to the valid flag
+        ContextElement* element = plugin->contextElements.value(currentContext);
+        int contextIdIndex = this->plugin->contextElements.keys().indexOf(currentContext);
+        QStandardItem* item = connectionListTableModel.item(contextIdIndex);
+        item->setBackground(getBrush(element));
+
+        connectionListTableModel.setItem(contextIdIndex, item);
+        // add corresponding messages to the table view
         for (int i = 0;i<element->messages.keys().size();i++) {
             int messageId = element->messages.keys().at(i);
             QDltMsg message = element->messages[messageId];
             QStandardItem* payload = new QStandardItem(message.toStringPayload());
 
-            if (element->valid == 0) {
-                // full green
-                payload->setBackground(QBrush(QColor(Qt::green)));
-            }
-            else if (element->valid == 1) {
-                if (messageId < element->failedAt) {
-                    payload->setBackground(QBrush(QColor(Qt::green)));
-                }
-                else {
-                    payload->setBackground(QBrush(QColor(Qt::red)));
-                }
+            payload->setBackground(getBrush(element, messageId));
 
-                // set tooltip at failedAt position
-                if (messageId == element->failedAt) {
-                    payload->setToolTip(element->failedAtExpectation);
-                }
+            // set tooltip at failedAt position
+            if (messageId == element->failedAt) {
+                payload->setToolTip(element->failedAtExpectation);
             }
 
             payload->setEditable(false);
@@ -76,6 +103,8 @@ void Form::setMessages() {
         }
         this->plugin->contextElementsLock.unlock();
     }
+
+    ui->selectedConnectionTraceTable->scrollToBottom();
 }
 
 void Form::on_connectionListTable_clicked(const QModelIndex &index)
@@ -88,9 +117,10 @@ void Form::on_connectionListTable_clicked(const QModelIndex &index)
 void Form::on_connectionListTable_doubleClicked(const QModelIndex &index)
 {
     this->plugin->contextElementsLock.lock();
-    QVariant selection = this->connectionListTableModel.data(connectionListTableModel.index(index.row(), index.column()));
-    ContextElement* element = plugin->contextElements.value(selection.toString());
+    QString contextId = this->connectionListTableModel.data(connectionListTableModel.index(index.row(), index.column())).toString();
+    ContextElement* element = plugin->contextElements.value(contextId);
     QString initialPath;
+
     if (!element->filePath.isEmpty()) {
         initialPath = element->filePath;
         connectionListTableModel.item(index.row(), index.column())->setToolTip(initialPath);
@@ -100,12 +130,28 @@ void Form::on_connectionListTable_doubleClicked(const QModelIndex &index)
     }
 
     this->plugin->contextElementsLock.unlock();
+
+    // the file browser must be invoked after the lock is released
     QString fileName = QFileDialog::getOpenFileName(this, tr("Open File"), initialPath, tr("Franca Interface Definition Files (*.fidl)"));
+    qDebug() << "Selected new file path for context " <<  fileName << "\n";
+
     this->plugin->contextElementsLock.lock();
-    qDebug() << fileName << "\n";
     if (!fileName.isEmpty()) {
+
+        // the messages must be sent again
+        if (fileName.compare(initialPath) != 0) {
+            element->valid = -1;
+            element->failedAt = -1;
+            element->unsentMessages->clear();
+            for (int i = 0;i<element->messages.keys().size();i++) {
+                element->unsentMessages->append(element->messages.keys().at(i));
+            }
+        }
+
         element->filePath = fileName;
-        plugin->contextElements.insert(selection.toString(), element);
+        plugin->contextElements.insert(contextId, element);
     }
     this->plugin->contextElementsLock.unlock();
+
+    this->plugin->trySendMessages();
 }

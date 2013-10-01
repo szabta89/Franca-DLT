@@ -7,7 +7,7 @@
 #include <QStandardItemModel>
 #include "contextelement.h"
 
-class TraceViewerPlugin;
+class ContractValidatorPlugin;
 
 namespace Ui {
     class Form;
@@ -18,7 +18,7 @@ class Form : public QWidget
     Q_OBJECT
 
 public:
-    explicit Form(TraceViewerPlugin* _plugin, QWidget *parent = 0);
+    explicit Form(ContractValidatorPlugin* _plugin, QWidget *parent = 0);
     ~Form();
 
     void addContext(QString contex);
@@ -29,8 +29,10 @@ private slots:
     void on_connectionListTable_doubleClicked(const QModelIndex &index);
 
 private:
+    QBrush getBrush(ContextElement* element);
+    QBrush getBrush(ContextElement* element, int messageId);
     Ui::Form *ui;
-    TraceViewerPlugin* plugin;
+    ContractValidatorPlugin* plugin;
     QStandardItemModel connectionListTableModel;
     QStandardItemModel selectedConnectionTraceTableModel;
     QString currentContext;

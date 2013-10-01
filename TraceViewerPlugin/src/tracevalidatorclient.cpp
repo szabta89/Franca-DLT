@@ -1,6 +1,6 @@
 #include "tracevalidatorclient.h"
 
-TraceValidatorClient::TraceValidatorClient(TraceViewerPlugin* _plugin, QObject *parent) : QObject(parent)
+TraceValidatorClient::TraceValidatorClient(ContractValidatorPlugin* _plugin, QObject *parent) : QObject(parent)
 {
     this->plugin = _plugin;
     this->socket = new QTcpSocket(this);

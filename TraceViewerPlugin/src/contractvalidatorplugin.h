@@ -1,32 +1,34 @@
-#ifndef TRACEVIEWERPLUGIN_H
-#define TRACEVIEWERPLUGIN_H
+#ifndef CONTRACTVALIDATORPLUGIN_H
+#define CONTRACTVALIDATORPLUGIN_H
 
 #include <QObject>
 #include <QMap>
+#include <QtGui>
 #include "plugininterface.h"
 #include "form.h"
 #include "tracevalidatorclient.h"
 #include "tracevalidatorserver.h"
+#include "traceelementresponseprocessor.h"
 #include "json.h"
 
 #define PLUGIN_VERSION "1.0.0"
 
 class TraceValidatorServer;
 class TraceValidatorClient;
+class TraceElementResponseProcessor;
 
-class TraceViewerPlugin : public QObject, QDLTPluginInterface, QDltPluginViewerInterface, QDltPluginControlInterface
+class ContractValidatorPlugin : public QObject, QDLTPluginInterface, QDltPluginViewerInterface
 {
     Q_OBJECT
     Q_INTERFACES(QDLTPluginInterface)
     Q_INTERFACES(QDltPluginViewerInterface)
-    Q_INTERFACES(QDltPluginControlInterface)
 #ifdef QT5
-    Q_PLUGIN_METADATA(IID "org.franca.tools.contracts.TraceViewerPlugin")
+    Q_PLUGIN_METADATA(IID "org.franca.tools.contracts.ContractValidatorPlugin")
 #endif
 
 public:
-    TraceViewerPlugin();
-    ~TraceViewerPlugin();
+    ContractValidatorPlugin();
+    ~ContractValidatorPlugin();
 
     /* QDLTPluginInterface interface */
     QString name();
@@ -51,31 +53,21 @@ public:
     void selectedIdxMsg(int index, QDltMsg &msg);
     void selectedIdxMsgDecoded(int index, QDltMsg &msg);
 
-    /* QDltPluginControlInterface */
-    bool initControl(QDltControl *control);
-    bool initConnections(QStringList list);
-    bool controlMsg(int index, QDltMsg &msg);
-    bool stateChanged(int index, QDltConnection::QDltConnectionState connectionState);
-
     /* internal variables */
-    Form *form;
-    int counterMessages;
-    int counterNonVerboseMessages;
-    int counterVerboseMessages;
-
-    void show(bool value);
-    void updateCounters(int start,int end);
+    Form *form;  
     QDltControl *dltControl;
     QMap<QString, ContextElement*> contextElements;
     QMutex contextElementsLock;
-private:
-    QDltFile* dltFile;
-    QString errorText;
+
+    void trySendMessages();
+
     TraceValidatorClient* traceValidatorClient;
     TraceValidatorServer* traceValidatorServer;
+    TraceElementResponseProcessor* traceElementResponseProcessor;
+private:
+    QString errorText;
     Json json;
     int messageCounter;
-    void trySendMessages();
 };
 
-#endif // TRACEVIEWERPLUGIN_H
+#endif // CONTRACTVALIDATORPLUGIN_H

@@ -3,22 +3,24 @@
 include( ../../dlt-viewer/plugin/plugin.pri )
 
 HEADERS += \
-    src/traceviewerplugin.h \
     src/form.h \
     src/form.h \
     src/contextelement.h \
     src/tracevalidatorclient.h \
     src/json.h \
     src/tracevalidatorserver.h \
-    src/params.h
+    src/params.h \
+    src/contractvalidatorplugin.h \
+    src/traceelementresponseprocessor.h
 
 SOURCES += \
-    src/traceviewerplugin.cpp \
     src/form.cpp \
     src/contextelement.cpp \
     src/tracevalidatorclient.cpp \
     src/json.cpp \
-    src/tracevalidatorserver.cpp
+    src/tracevalidatorserver.cpp \
+    src/contractvalidatorplugin.cpp \
+    src/traceelementresponseprocessor.cpp
 
 TARGET = $$qtLibraryTarget(traceviewerplugin)
 
