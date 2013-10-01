@@ -7,7 +7,7 @@ DLT_DECLARE_CONTEXT(context);
 
 int main(int argc, char** argv) {
 	if (argc < 4) {
-		printf("Usage: tracegen APPID CONTEXTID path_to_trace_file [delay]\n");
+		printf("Usage: tracegen APPID CONTEXTID path_to_trace_file [delay (ms)]\n");
 		return 1;
 	}
 	else {
@@ -15,7 +15,7 @@ int main(int argc, char** argv) {
 		char* contextid = argv[2];
 		char* path = argv[3];
 
-		int delay = 1;
+		int delay = 1000;
 		if (argc == 5) {
 			delay = atoi(argv[4]);
 		}
@@ -39,7 +39,7 @@ int main(int argc, char** argv) {
 				line[strlen(line) - 1] = 0;
 			}
 			DLT_LOG(context, DLT_LOG_INFO, DLT_STRING(line));
-			sleep(delay);
+			usleep(delay * 1000);
 		}
 
 		if (line) {
