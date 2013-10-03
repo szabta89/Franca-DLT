@@ -27,6 +27,7 @@ public:
 private slots:
     void on_connectionListTable_clicked(const QModelIndex &index);
     void on_connectionListTable_doubleClicked(const QModelIndex &index);
+    void on_autoScrollButton_clicked(bool checked);
 
 private:
     QBrush getBrush(int valid);
@@ -35,6 +36,7 @@ private:
     QStandardItemModel connectionListTableModel;
     QStandardItemModel selectedConnectionTraceTableModel;
     QString currentContext;
+    bool autoScroll;
 };
 
 #endif // FORM_H

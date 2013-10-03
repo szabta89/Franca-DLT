@@ -10,6 +10,7 @@ Form::Form(ContractValidatorPlugin* _plugin, QWidget *parent) :
 {
     ui->setupUi(this);
     plugin = _plugin;
+    autoScroll = false;
 
     QStandardItem* connectionNameHeaderItem = new QStandardItem(QString("Context id"));
     connectionListTableModel.setColumnCount(1);
@@ -91,7 +92,9 @@ void Form::setMessages() {
         this->plugin->contextElementsLock.unlock();
     }
 
-   // ui->selectedConnectionTraceTable->scrollToBottom();
+    if (autoScroll) {
+        ui->selectedConnectionTraceTable->scrollToBottom();
+    }
 }
 
 void Form::on_connectionListTable_clicked(const QModelIndex &index)
@@ -142,4 +145,9 @@ void Form::on_connectionListTable_doubleClicked(const QModelIndex &index)
     this->plugin->contextElementsLock.unlock();
 
     this->plugin->trySendMessages();
+}
+
+void Form::on_autoScrollButton_clicked(bool checked)
+{
+    this->autoScroll = checked;
 }
