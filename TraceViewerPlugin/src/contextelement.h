@@ -15,13 +15,20 @@ public:
     QString filePath;
 
     int valid; // -1 unknown, 0 valid, 1 invalid
-    // trace failure at failedAt
-    int failedAt;
-    // expected transition set pretty print at failedAt position
-    QString failedAtExpectation;
 
-    QMap<int, QDltMsg> messages;
+    // expectations mapped to msg ids
+    QMap<int, QString>* expectations;
+
+    // validness values mapped to msg ids
+    QMap<int, int>* status;
+
+    // messages mapped to msg ids
+    QMap<int, QDltMsg>* messages;
+
+    // unsent msg ids
     QList<int>* unsentMessages;
+private:
+    void init(QString _contextId);
 };
 
 #endif // CONTEXTELEMENT_H

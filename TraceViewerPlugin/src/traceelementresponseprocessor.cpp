@@ -33,18 +33,25 @@ void TraceElementResponseProcessor::run()
             this->plugin->contextElementsLock.lock();
 
             QString contextId = decoded["contextId"].toString();
+            int messageId = decoded["messageId"].toInt();
             int valid = decoded["valid"].toInt();
+            QString expectation = decoded["data"].toString();
+
             ContextElement* element = this->plugin->contextElements[contextId];
 
-            // set failure for the first time
-            if (element->valid == 0 && valid == 1) {
-                int messageId = decoded["messageId"].toInt();
-                QString expected = decoded["data"].toString();
-                element->failedAt = messageId;
-                element->failedAtExpectation = expected;
+            // set valid flag if it is unset yet, or it is not invalid
+            if (element->valid == -1) {
+                element->valid = valid;
             }
-            // set valid flag in both cases
-            element->valid = valid;
+            else if (element->valid != 1) {
+                element->valid = valid;
+            }
+
+            if (!expectation.isEmpty()) {
+                element->expectations->insert(messageId, expectation);
+            }
+
+            element->status->insert(messageId, valid);
 
             qDebug() << decoded << "\n";
 

@@ -29,8 +29,7 @@ private slots:
     void on_connectionListTable_doubleClicked(const QModelIndex &index);
 
 private:
-    QBrush getBrush(ContextElement* element);
-    QBrush getBrush(ContextElement* element, int messageId);
+    QBrush getBrush(int valid);
     Ui::Form *ui;
     ContractValidatorPlugin* plugin;
     QStandardItemModel connectionListTableModel;

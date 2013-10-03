@@ -37,31 +37,13 @@ void Form::addContext(QString contextId)
     ui->connectionListTable->scrollToBottom();
 }
 
-QBrush Form::getBrush(ContextElement *element)
+QBrush Form::getBrush(int valid)
 {
-    if (element->valid == 0) {
+    if (valid == 0) {
         return QBrush(QColor(Qt::green));
     }
-    else if (element->valid == 1) {
+    else if (valid == 1) {
         return QBrush(QColor(Qt::red));
-    }
-    else {
-        return QBrush(QColor(Qt::white));
-    }
-}
-
-QBrush Form::getBrush(ContextElement *element, int messageId)
-{
-    if (element->valid == 0) {
-        return QBrush(QColor(Qt::green));
-    }
-    else if (element->valid == 1) {
-        if (messageId < element->failedAt) {
-            return QBrush(QColor(Qt::green));
-        }
-        else {
-            return QBrush(QColor(Qt::red));
-        }
     }
     else {
         return QBrush(QColor(Qt::white));
@@ -82,20 +64,25 @@ void Form::setMessages() {
         ContextElement* element = plugin->contextElements.value(currentContext);
         int contextIdIndex = this->plugin->contextElements.keys().indexOf(currentContext);
         QStandardItem* item = connectionListTableModel.item(contextIdIndex);
-        item->setBackground(getBrush(element));
+        item->setBackground(getBrush(element->valid));
 
         connectionListTableModel.setItem(contextIdIndex, item);
         // add corresponding messages to the table view
-        for (int i = 0;i<element->messages.keys().size();i++) {
-            int messageId = element->messages.keys().at(i);
-            QDltMsg message = element->messages[messageId];
+        for (int i = 0;i<element->messages->keys().size();i++) {
+            int messageId = element->messages->keys().at(i);
+            QDltMsg message = element->messages->value(messageId);
             QStandardItem* payload = new QStandardItem(message.toStringPayload());
 
-            payload->setBackground(getBrush(element, messageId));
+            int valid = -1;
+            if (element->status->contains(messageId)) {
+                valid = element->status->value(messageId);
+            }
+
+            payload->setBackground(getBrush(valid));
 
             // set tooltip at failedAt position
-            if (messageId == element->failedAt) {
-                payload->setToolTip(element->failedAtExpectation);
+            if (element->expectations->contains(messageId)) {
+                payload->setToolTip(element->expectations->value(messageId));
             }
 
             payload->setEditable(false);
@@ -104,7 +91,7 @@ void Form::setMessages() {
         this->plugin->contextElementsLock.unlock();
     }
 
-    ui->selectedConnectionTraceTable->scrollToBottom();
+   // ui->selectedConnectionTraceTable->scrollToBottom();
 }
 
 void Form::on_connectionListTable_clicked(const QModelIndex &index)
@@ -141,10 +128,11 @@ void Form::on_connectionListTable_doubleClicked(const QModelIndex &index)
         // the messages must be sent again
         if (fileName.compare(initialPath) != 0) {
             element->valid = -1;
-            element->failedAt = -1;
+            element->status->clear();
+            element->expectations->clear();
             element->unsentMessages->clear();
-            for (int i = 0;i<element->messages.keys().size();i++) {
-                element->unsentMessages->append(element->messages.keys().at(i));
+            for (int i = 0;i<element->messages->keys().size();i++) {
+                element->unsentMessages->append(element->messages->keys().at(i));
             }
         }
 

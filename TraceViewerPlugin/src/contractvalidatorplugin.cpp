@@ -110,7 +110,7 @@ void ContractValidatorPlugin::updateMsg(int, QDltMsg &msg){
             this->form->addContext(msg.getCtid());
         }
 
-        this->contextElements[msg.getCtid()]->messages.insert(messageCounter, msg);
+        this->contextElements[msg.getCtid()]->messages->insert(messageCounter, msg);
         this->contextElements[msg.getCtid()]->unsentMessages->append(messageCounter);
         messageCounter++;
         this->contextElementsLock.unlock();
@@ -130,10 +130,16 @@ void ContractValidatorPlugin::trySendMessages() {
                 int messageId = element->unsentMessages->at(0);
 
                 QMap<QString, QVariant> message;
+
                 message["messageId"] = messageId;
-                message["traceElement"] = element->messages[messageId].toStringPayload();
+
+                QDltMsg m = element->messages->value(messageId);
+                message["traceElement"] = m.toStringPayload();
+
                 message["filePath"] = element->filePath;
+
                 message["contextId"] = element->contextId;
+
                 QString encoded = json.encode(message);
                 bool result = this->traceValidatorClient->send(encoded);
                 if (!result) {
