@@ -19,9 +19,9 @@ import org.franca.core.franca.FEventOnIf;
 import org.franca.core.franca.FModel;
 import org.franca.core.franca.FTransition;
 import org.franca.tools.contracts.tracegen.dlt.connector.client.TraceValidatorClient;
-import org.franca.tools.contracts.validator.TraceValidationResult;
-import org.franca.tools.contracts.validator.TraceValidator;
-import org.franca.tools.contracts.validator.parser.ITraceParser;
+import org.franca.tools.contracts.tracevalidator.TraceValidationResult;
+import org.franca.tools.contracts.tracevalidator.TraceValidator;
+import org.franca.tools.contracts.tracevalidator.parser.ITraceParser;
 
 import com.google.inject.Injector;
 
